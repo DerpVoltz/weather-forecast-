@@ -1,0 +1,12 @@
+img {
+    max-width: 50%;
+    height: auto;
+  }
+
+.card-color {
+    background-color: #2d3e50;
+}
+
+.card-text {
+    font-size: 15px;
+}
