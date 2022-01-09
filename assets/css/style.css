@@ -3,6 +3,10 @@ img {
     height: auto;
   }
 
+.weather-title {
+    background-image: linear-gradient(to bottom right, blue, #00008B);
+}
+
 .card-color {
     background-color: #2d3e50;
 }
@@ -10,3 +14,4 @@ img {
 .card-text {
     font-size: 15px;
 }
+

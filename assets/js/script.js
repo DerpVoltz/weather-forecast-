@@ -1,19 +1,42 @@
 var apiKey = "70539c089a192ad51dae93112ad8a637";
-var city = "Houston";
 var latLon = [1, 2];
-var apiUrlCurrent = "https://api.openweathermap.org/data/2.5/weather?q=" + city + "&units=imperial&appid=" + apiKey;
-var currentSection = $("#current");
-var futureSection = $("#five-day");
+var weatherDisplay = $("#weather-display");
+var frm = $("#city-form");
+var historyCards = $("#history");
+var historyCardsTwo = document.querySelector("#history");
+var cityHistory = [];
 
+function createHistory() {
+    var history = localStorage.getItem("cityStorage");
+    if (history) {
+        var parsedHistory = JSON.parse(history);
+        for (i = 0; i < 8; i ++) {
+            if(parsedHistory[i]){
+                var newValue = parsedHistory[i];
+                cityHistory.push(newValue);
+                var button = $("<button class='btn btn-secondary m-2'>" + parsedHistory[i] + "</button>");
+                historyCards.append(button);
+                
+            }
+        } 
+    }
+}
 
-fetch(apiUrlCurrent).then(function(response){
+function createData(city) {
+    weatherDisplay.empty();
+    var apiUrlCurrent = "https://api.openweathermap.org/data/2.5/weather?q=" + city + "&units=imperial&appid=" + apiKey;
+    fetch(apiUrlCurrent).then(function(response){
     if (response.ok){
         response.json().then(function(data){
+            console.log(data);
             createCurrentWeather(data);
             futureWeather(data.coord.lat, data.coord.lon)
-        })
-    }
-})
+            })
+        } else {
+            alert("Please enter a real city");
+        }  
+    })
+}
 
 function futureWeather(lat, lon) {
     var apiUrlFuture = "https://api.openweathermap.org/data/2.5/onecall?lat=" + lat + "&lon=" + lon + "&exclude=minutely_hourly_alerts&units=imperial&appid=" + apiKey;
@@ -41,7 +64,7 @@ function futureCards(data) {
         var humidityStat = $("<p class='text-light card-text'>Humidity: " + humidity + " %</p>");
 
         card.append(weatherIcon, tempStat, windStat, humidityStat);
-        futureSection.append(card);
+        weatherDisplay.append(card);
     }
 
 }
@@ -61,16 +84,33 @@ function getDate(data) {
     return formattedDate;
 }
 
+function addToStorage(parent) {
+    for (i = 0; i < cityHistory.length; i ++) {
+        var city = parent;
+        if(city === cityHistory[i]) {
+            return false;
+        }
+        
+    }
+    var btn = $("<button class='btn btn-secondary m-2'>" + parent + "</button>");
+    historyCards.append(btn);
+    cityHistory.unshift(parent);
+    localStorage.setItem("cityStorage", JSON.stringify(cityHistory));
+}
+
 function createCurrentWeather(data) {
     var temp = data.main.temp;
     var humidity = data.main.humidity;
     var wind = data.wind.speed;
     var lat = data.coord.lat;
     var lon = data.coord.lon;
+    var city = data.name;
+    addToStorage(city);
+    var card = $("<div class='col-lg-12 border'></div>")
     var dataLog = $("<h1>" + city + " (" + getDate(data) + ")<img src='http://openweathermap.org/img/wn/" + data.weather[0].icon + "@2x.png'></h1>")
     var dataLogging = $("<p>Temp: " + temp + "°F</p> <p>Wind: " + wind + "MPH</p> <p>Humidity: " + humidity +" %</p>");
-    currentSection.append(dataLog);
-    currentSection.append(dataLogging);
+    card.append(dataLog);
+    card.append(dataLogging);
 
     fetch("https://api.openweathermap.org/data/2.5/uvi?appid=" + apiKey + "&lat=" + lat + "&lon=" + lon).then(function(response){
         if(response.ok){
@@ -83,9 +123,28 @@ function createCurrentWeather(data) {
                 } else {
                     var UvIndex = $("<p>UV Index: <span class='p-2 bg-danger rounded text-light'>" + Uv + "</span></p>");
                 }
-                currentSection.append(UvIndex);
+                card.append(UvIndex);
+                weatherDisplay.append(card);
             })
         }
     })
 }
 
+createHistory();
+
+historyCardsTwo.addEventListener("click", function(e) {
+    if (e.target.matches(".btn-secondary")) {
+        var city = e.target.innerHTML;
+        createData(city);
+    }
+})
+
+
+
+frm.submit(function(e) {
+    e.preventDefault();
+    var cityName = document.querySelector("#city-search").value;
+    createData(cityName);
+    var frm = document.querySelector("#city-form")
+    frm.reset();
+});
